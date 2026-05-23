@@ -1,91 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
-function App() {
-  const [formData, setFormData] = useState({ nome: '', data: '', hora: '', link: '' });
-  const [aulas, setAulas] = useState([]);
+export default function App() {
+  const [classes, setClasses] = useState([]);
+  const [form, setForm] = useState({ name: '', date: '', hour: '', link: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchAulas();
+    fetchClasses();
   }, []);
 
-  const fetchAulas = async () => {
-    setLoading(true);
+  async function fetchClasses() {
     const { data, error } = await supabase
-      .from('aulas')
+      .from('classes')
       .select('*')
-      .order('data', { ascending: true });
-    if (!error) setAulas(data);
-    setLoading(false);
-  };
+      .order('date', { ascending: true });
+    if (error) console.error(error);
+    else setClasses(data);
+  }
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const { error } = await supabase.from('aulas').insert([formData]);
-    if (!error) {
-      setFormData({ nome: '', data: '', hora: '', link: '' });
-      fetchAulas();
+    setLoading(true);
+    const { error } = await supabase.from('classes').insert([
+      { name: form.name, date: form.date, hour: form.hour, link: form.link },
+    ]);
+    if (error) {
+      console.error(error);
+      alert('Erro ao agendar aula.');
+    } else {
+      setForm({ name: '', date: '', hour: '', link: '' });
+      fetchClasses();
     }
-  };
+    setLoading(false);
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-      <h1 className="text-4xl font-bold text-blue-600 mb-8">Agendamento de Aulas</h1>
-      
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mb-8">
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Nome</label>
-          <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Data</label>
-          <input type="date" name="data" value={formData.data} onChange={handleChange} required className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Hora</label>
-          <input type="time" name="hora" value={formData.hora} onChange={handleChange} required className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Link da Aula</label>
-          <input type="url" name="link" value={formData.link} onChange={handleChange} placeholder="https://..." className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Agendar Aula</button>
-      </form>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-center">Agendamento de Aulas</h1>
 
-      {loading ? (
-        <p className="text-gray-500">Carregando...</p>
-      ) : (
-        <div className="w-full max-w-2xl">
-          {aulas.length === 0 ? (
-            <p className="text-gray-500 text-center">Nenhuma aula agendada.</p>
-          ) : (
-            <div className="space-y-4">
-              {aulas.map((aula) => (
-                <div key={aula.id} className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-                  <div>
-                    <h3 className="font-semibold text-lg">{aula.nome}</h3>
-                    <p className="text-gray-500">{aula.data} às {aula.hora}</p>
-                    {aula.link && (
-                      <a href={aula.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-sm">Link da aula</a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+              Nome do Aluno
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
+              Data da Aula
+            </label>
+            <input
+              id="date"
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              required
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="hour">
+              Horário
+            </label>
+            <input
+              id="hour"
+              type="time"
+              value={form.hour}
+              onChange={(e) => setForm({ ...form, hour: e.target.value })}
+              required
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="link">
+              Link da Aula
+            </label>
+            <input
+              id="link"
+              type="url"
+              value={form.link}
+              onChange={(e) => setForm({ ...form, link: e.target.value })}
+              required
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              {loading ? 'Aguardando...' : 'Agendar Aula'}
+            </button>
+          </div>
+        </form>
+
+        <h2 className="text-2xl font-bold mb-4">Aulas Agendadas</h2>
+        <div className="space-y-4">
+          {classes.length === 0 && (
+            <p className="text-gray-500">Nenhuma aula agendada.</p>
           )}
+          {classes.map((aula) => (
+            <div key={aula.id} className="bg-white shadow-md rounded px-6 py-4">
+              <h3 className="text-lg font-semibold">{aula.name}</h3>
+              <p className="text-gray-600">
+                {aula.date} às {aula.hour}
+              </p>
+              <a
+                href={aula.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                Link da Aula
+              </a>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
-
-export default App;
